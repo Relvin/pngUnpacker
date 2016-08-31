@@ -1,118 +1,127 @@
-#encoding=utf-8
+#!/usr/bin/python
 
-import os,sys
+# encoding = utf-8
+
+import os
+import sys
 from PIL import Image
 # from xml.etree import ElementTree
 
-global imageInfo
+image_info = {}
 gl_rect_list = []
 gl_plist_rect_list = []
 
-def rectInRectList(rect,rectList):
-    for v in rectList:
-        if rect == Rect(float(v[0]),float(v[1]),float(v[2]),float(v[3])):
+
+def rect_in_rect_list(rect, rect_list):
+    for v in rect_list:
+        if rect == Rect(float(v[0]), float(v[1]), float(v[2]), float(v[3])):
             return True
     return False
 
+
 def tree_to_dict(tree):
-    d={}
-    for index,item in enumerate(tree):
-        if item.tag =='key':
+    d = {}
+    for index, item in enumerate(tree):
+        if item.tag == 'key':
             if tree[index+1].tag == 'string':
                 d[item.text] = tree[index+1].text
             elif tree[index+1].tag == 'true':
-                d[item.text]=True
+                d[item.text] = True
             elif tree[index+1].tag == 'false':
-                d[item.text]=False
-            elif  tree[index+1].tag == "integer":
-                d[item.text]=tree[index+1].text
-            elif  tree[index+1].tag == "array":
-                d[item.text]=tree[index+1].text
+                d[item.text] = False
+            elif tree[index+1].tag == "integer":
+                d[item.text] = tree[index+1].text
+            elif tree[index+1].tag == "array":
+                d[item.text] = tree[index+1].text
             elif tree[index+1].tag == 'dict':
                 d[item.text] = tree_to_dict(tree[index+1])
     return d
+
 
 class Vec2(object):
     x = float(0.0)
     y = float(0.0)
 
-    def __init__(self,xOrVec,y = None):
-        if isinstance(xOrVec,Vec2):
-            self.x = float(xOrVec.x)
-            self.y = float(xOrVec.y)
-        elif isinstance(xOrVec,Size):
-            self.x = float(xOrVec.width)
-            self.y = float(xOrVec.height)
+    def __init__(self, x_or_vec, y=None):
+        if isinstance(x_or_vec, Vec2):
+            self.x = float(x_or_vec.x)
+            self.y = float(x_or_vec.y)
+        elif isinstance(x_or_vec, Size):
+            self.x = float(x_or_vec.width)
+            self.y = float(x_or_vec.height)
         else:
-            self.x = float(xOrVec)
+            self.x = float(x_or_vec)
             self.y = float(y)
 
 # <
     def __lt__(self, other):
-        if isinstance(other,Vec2):
+        if isinstance(other, Vec2):
             if self.x < other.x and self.y < other.y:
                 return True
-        elif isinstance(other,Size):
+        elif isinstance(other, Size):
             if self.x < other.width and self.y < other.height:
                 return True
         return False
 
     def __repr__(self):
-        return "x = %f,y = %f" %(self.x,self.y)
+        return "x = %f,y = %f" % (self.x, self.y)
+
 
 class Size(object):
     width = float(0.0)
     height = float(0.0)
 
-    def __init__(self,wOrther,h = None):
-        if isinstance(wOrther,Size):
-            self.width = float(wOrther.width)
-            self.height = float(wOrther.height)
-        elif isinstance(wOrther,Vec2):
-            self.width = float(wOrther.x)
-            self.height = float(wOrther.y)
-        elif isinstance(wOrther,tuple):
-            self.width = wOrther[0]
-            self.height = wOrther[1]
+    def __init__(self, w_or_other, h=None):
+        if isinstance(w_or_other, Size):
+            self.width = float(w_or_other.width)
+            self.height = float(w_or_other.height)
+        elif isinstance(w_or_other, Vec2):
+            self.width = float(w_or_other.x)
+            self.height = float(w_or_other.y)
+        elif isinstance(w_or_other, tuple):
+            self.width = w_or_other[0]
+            self.height = w_or_other[1]
         else:
-            self.width = float(wOrther)
+            self.width = float(w_or_other)
             self.height = float(h)
 
 # -
     def __sub__(self, other):
-        if isinstance(other,Size):
-            return Size(self.width - other.width,self.height - other.height)
-        elif isinstance(other,Vec2):
-            return Size(self.width - other.x,self.height - other.y)
-
+        if isinstance(other, Size):
+            return Size(self.width - other.width, self.height - other.height)
+        elif isinstance(other, Vec2):
+            return Size(self.width - other.x, self.height - other.y)
+        
 # =
-    def __eq__(self, wOrther):
-        if isinstance(wOrther,Vec2):
-            if self.width == wOrther.x and self.height == wOrther.y:
+    def __eq__(self, w_or_other):
+        if isinstance(w_or_other, Vec2):
+            if self.width == w_or_other.x and self.height == w_or_other.y:
                 return True
         else:
-            if self.width == wOrther.width and self.height == wOrther.height:
+            if self.width == w_or_other.width and self.height == w_or_other.height:
                 return True
         return False
+
     def __repr__(self):
-        return "width = %f,height = %f" %(self.width,self.height)
+        return "width = %f,height = %f" % (self.width, self.height)
+
 
 class Rect(object):
-    origin = Vec2(0.0,0.0)
-    size = Size(0.0,0.0)
+    origin = Vec2(0.0, 0.0)
+    size = Size(0.0, 0.0)
 
-    def __init__(self,xOrVec2 = None ,yOrSize = None ,width = None ,height = None):
-        if isinstance(xOrVec2,Rect):
-            self.origin.x = float(xOrVec2.x())
-            self.origin.y = float(xOrVec2.y())
-            self.size.width = float(xOrVec2.width())
-            self.size.height = float(xOrVec2.height())
-        elif isinstance(xOrVec2,Vec2) and (isinstance(yOrSize,Size) or isinstance(yOrSize,Vec2)):
-            self.origin = Vec2(xOrVec2)
-            self.size = Size(yOrSize)
-        elif xOrVec2 is not None and yOrSize is not None and width is not None and height is not None:
-            self.origin.x = float(xOrVec2)
-            self.origin.y = float(yOrSize)
+    def __init__(self, x_or_other=None, y_or_size=None, width=None, height=None):
+        if isinstance(x_or_other, Rect):
+            self.origin.x = float(x_or_other.x())
+            self.origin.y = float(x_or_other.y())
+            self.size.width = float(x_or_other.width())
+            self.size.height = float(x_or_other.height())
+        elif isinstance(x_or_other, Vec2) and (isinstance(y_or_size, Size) or isinstance(y_or_size, Vec2)):
+            self.origin = Vec2(x_or_other)
+            self.size = Size(y_or_size)
+        elif x_or_other is not None and y_or_size is not None and width is not None and height is not None:
+            self.origin.x = float(x_or_other)
+            self.origin.y = float(y_or_size)
             self.size.width = float(width)
             self.size.height = float(height)
         else:
@@ -122,46 +131,46 @@ class Rect(object):
             self.size.height = 0
 
     def __eq__(self, other):
-        if self.x() == other.x() and self.y() == other.y() and self.width() == other.width() and self.height() == other.height():
+        if self.x() == other.x() and self.y() == other.y() and \
+                        self.width() == other.width() and self.height() == other.height():
             return True
         return False
 
-    def intersectsRect(self,other):
-        return not (self.getMaxX() < other.getMinX() or
-                other.getMaxX() < self.getMinX() or
-                self.getMaxY() < other.getMinY() or
-                other.getMaxY() < self.getMinY())
+    def intersects_rect(self, other):
+        return not (self.get_max_x() < other.get_min_x() or
+                    other.get_max_x() < self.get_min_x() or
+                    self.get_max_y() < other.get_min_y() or
+                    other.get_max_y() < self.get_min_y())
 
-    def merge(self,other):
-        top1 = self.getMaxY()
-        left1 = self.getMinX()
-        right1 = self.getMaxX()
-        bottom1 = self.getMinY()
-        top2 = other.getMaxY()
-        left2 = other.getMinX()
-        right2 = other.getMaxX()
-        bottom2 = other.getMinY()
+    def merge(self, other):
+        top1 = self.get_max_y()
+        left1 = self.get_min_x()
+        right1 = self.get_max_x()
+        bottom1 = self.get_min_y()
+        top2 = other.get_max_y()
+        left2 = other.get_min_x()
+        right2 = other.get_max_x()
+        bottom2 = other.get_min_y()
         self.origin.x = min(left1, left2)
         self.origin.y = min(bottom1, bottom2)
         self.size.width = max(right1, right2) - self.origin.x
         self.size.height = max(top1, top2) - self.origin.y
 
-    def getMinX(self):
+    def get_min_x(self):
         return self.x()
 
-    def getMaxX(self):
-        maxX = self.x() + self.width()
-        return maxX
+    def get_max_x(self):
+        return self.x() + self.width()
 
-    def getMinY(self):
-        return  self.y()
+    def get_min_y(self):
+        return self.y()
 
-    def getMaxY(self):
-        maxY = self.y() + self.height()
-        return maxY
+    def get_max_y(self):
+        return self.y() + self.height()
 
-    def containsPoint(self,point):
-        if point.x >= self.origin.x and point.x <= self.getMaxX() and point.y >= self.origin.y and point.y <= self.getMaxY():
+    def contains_point(self, point):
+        if self.origin.x <= point.x <= self.get_max_x() and \
+                        self.origin.y <= point.y <= self.get_max_y():
             return True
         return False
 
@@ -177,93 +186,100 @@ class Rect(object):
     def height(self):
         return self.size.height
 
-#print
     def __repr__(self):
-        return "x = %f ,y = %f,width = %f,height = %f" %(self.x(),self.y(),self.width(),self.height())
+        return "x = %f ,y = %f,width = %f,height = %f" % (self.x(), self.y(), self.width(), self.height())
 
-def getAlphaByPos(pos):
-    point = (pos.x,pos.y)
-    color = imageInfo.getpixel(point)
+
+def get_alpha_by_pos(pos):
+    global image_info
+    point = (pos.x, pos.y)
+    color = image_info.getpixel(point)
     alpha = 0
-    if(color[3] > 0) :
+    if color[3] > 0:
         for value in color:
             alpha += value
 
     return alpha
 
-def findNextNoneTransparentPixel(beginPoint,rect):
+
+def find_next_none_transparent_pixel(begin_point, rect):
     found = False
-    pixelPoint = Vec2(beginPoint)
-    while pixelPoint.y < rect.height():#for yIdx in range(rect.size.height - beginPoint.y):
-        while pixelPoint.x < rect.width():
-            if(getAlphaByPos(pixelPoint) > 0):
+    pixel_point = Vec2(begin_point)
+    while pixel_point.y < rect.height():
+        while pixel_point.x < rect.width():
+            if get_alpha_by_pos(pixel_point) > 0:
                 contain = False
                 for rect_value in gl_rect_list:
-                    if rect_value.containsPoint(pixelPoint) == True:
-                        pixelPoint.x = rect_value.getMaxX()
+                    if rect_value.contains_point(pixel_point) is True:
+                        pixel_point.x = rect_value.get_max_x()
                         contain = True
                         break
-                if contain == False:
+                if contain is False:
                     found = True
                     break
-            pixelPoint.x += 1
-        if found == True:
+            pixel_point.x += 1
+        if found is True:
             break
-        pixelPoint.y += 1
-        pixelPoint.x = 0
-    if found == True:
-        return pixelPoint
+        pixel_point.y += 1
+        pixel_point.x = 0
+    if found is True:
+        return pixel_point
     else:
         return False
 
-def getSquareValue(x,y,rect):
+
+def get_square_value(x, y, rect):
     sv = 0
-    fixedRect = Rect(rect.origin, rect.size-Size(2,2))
+    fixed_rect = Rect(rect.origin, rect.size-Size(2, 2))
 
     tl = Vec2(x-1, y-1)
-    if fixedRect.containsPoint(tl) and getAlphaByPos(tl):
+    if fixed_rect.contains_point(tl) and get_alpha_by_pos(tl):
         sv += 1
     tr = Vec2(x, y-1)
-    if fixedRect.containsPoint(tr) and getAlphaByPos(tr):
+    if fixed_rect.contains_point(tr) and get_alpha_by_pos(tr):
         sv += 2
     bl = Vec2(x-1, y)
-    if fixedRect.containsPoint(bl) and getAlphaByPos(bl):
+    if fixed_rect.contains_point(bl) and get_alpha_by_pos(bl):
         sv += 4
     br = Vec2(x, y)
-    if fixedRect.containsPoint(br) and getAlphaByPos(br):
+    if fixed_rect.contains_point(br) and get_alpha_by_pos(br):
         sv += 8
     return sv
 
-def getMinPoint(srcPoint,wOrPoint,h = 0):
-    point = Vec2(0,0)
-    if isinstance(wOrPoint,Size) or isinstance(wOrPoint,Vec2):
-        point = wOrPoint
+
+def get_min_point(src_point, w_or_point, h=0):
+    point = Vec2(0, 0)
+    if isinstance(w_or_point, Size) or isinstance(w_or_point, Vec2):
+        point = w_or_point
     else:
-        point.x = wOrPoint
+        point.x = w_or_point
         point.y = h
-    if point.x < srcPoint.x:
-        srcPoint.x = point.x
-    if point.y < srcPoint.y:
-        srcPoint.y = point.y
-    return srcPoint
+    if point.x < src_point.x:
+        src_point.x = point.x
+    if point.y < src_point.y:
+        src_point.y = point.y
+    return src_point
 
-def getMaxSize(srcSize,wOrSize,h = 0):
-    size = Size(0,0)
-    if isinstance(wOrSize,Size) or isinstance(wOrSize,Vec2):
-        size = wOrSize
+
+def get_max_size(src_size, w_or_size, h=0):
+    size = Size(0, 0)
+    if isinstance(w_or_size, Size) or isinstance(w_or_size, Vec2):
+        size = w_or_size
     else:
-        size.width = wOrSize
+        size.width = w_or_size
         size.height = h
-    if size.width > srcSize.width:
-        srcSize.width = size.width
-    if size.height > srcSize.height:
-        srcSize.height = size.height
-    return srcSize
+    if size.width > src_size.width:
+        src_size.width = size.width
+    if size.height > src_size.height:
+        src_size.height = size.height
+    return src_size
 
-def getIndexFromPos(x,y,width):
+
+def get_index_from_pos(x, y, width):
     return y*width+x
 
-def marchSquare(start,rect):
+
+def march_square(start, rect):
     stepx = 0
     stepy = 0
     prevx = 0
@@ -276,13 +292,12 @@ def marchSquare(start,rect):
     problem = False
     case9s = []
     case6s = []
-    i = 0
 
-    orgPoint = start
-    subSize = Size(0,0)
+    org_point = start
+    sub_size = Size(0, 0)
 
     while True:
-        sv = getSquareValue(curx, cury, rect)
+        sv = get_square_value(curx, cury, rect)
 
         if sv == 1 or sv == 5 or sv == 13:
             stepx = 0
@@ -297,7 +312,7 @@ def marchSquare(start,rect):
             stepx = 1
             stepy = 0
         elif sv == 9:
-            i = getIndexFromPos(curx,cury,rect.size.width)
+            i = get_index_from_pos(curx, cury, rect.size.width)
             if i in case9s:
                 stepx = 0
                 stepy = 1
@@ -308,7 +323,7 @@ def marchSquare(start,rect):
                 stepy = -1
                 case9s.append(i)
         elif sv == 6:
-            i = getIndexFromPos(curx,cury,rect.size.width)
+            i = get_index_from_pos(curx, cury, rect.size.width)
             if i in case6s:
                 stepx = -1
                 stepy = 0
@@ -325,56 +340,57 @@ def marchSquare(start,rect):
         cury += stepy
 
         if stepx == prevx and stepy == prevy:
-            getMinPoint(orgPoint,curx,cury)
-            getMaxSize(subSize,curx,cury)
+            get_min_point(org_point, curx, cury)
+            get_max_size(sub_size, curx, cury)
         elif problem:
-            getMinPoint(orgPoint,curx,cury)
-            getMaxSize(subSize,curx,cury)
+            get_min_point(org_point, curx, cury)
+            get_max_size(sub_size, curx, cury)
         else:
-            getMinPoint(orgPoint,curx,cury)
-            getMaxSize(subSize,curx,cury)
+            get_min_point(org_point, curx, cury)
+            get_max_size(sub_size, curx, cury)
 
         count += 1
         prevx = stepx
         prevy = stepy
         problem = False
 
-        if curx == startx and cury == starty :
+        if curx == startx and cury == starty:
             break
-    subSize = subSize - orgPoint
-    return  Rect(orgPoint,subSize)
+    sub_size = sub_size - org_point
+    return Rect(org_point, sub_size)
 
 
-def unpackerImage(path):
-    global imageInfo
-    imageInfo = Image.open(path)
-    # imageInfo.show()
-    size = Size(imageInfo.size)
-    rect = Rect(Vec2(0,0),size)
-    start = findNextNoneTransparentPixel(Vec2(0,0),rect)
-    while isinstance(start,Vec2) and start < rect.size:
-        subRect = marchSquare(start,rect)
-        print "rect = " ,subRect
+def unpacker_image(path):
+    global image_info
+    image_info = Image.open(path)
+    # image_info.show()
+    size = Size(image_info.size)
+    rect = Rect(Vec2(0, 0), size)
+    start = find_next_none_transparent_pixel(Vec2(0, 0), rect)
+    while isinstance(start, Vec2) and start < rect.size:
+        sub_rect = march_square(start, rect)
+        print "rect = ", sub_rect
         intersect = False
         for v in gl_rect_list:
-            if v.intersectsRect(subRect):
-                v.merge(subRect)
+            if v.intersects_rect(sub_rect):
+                v.merge(sub_rect)
                 intersect = True
                 break
-        if intersect == False:
-            gl_rect_list.append(subRect)
+        if intersect is False:
+            gl_rect_list.append(sub_rect)
 
-        newStartPot = Vec2(subRect.getMaxX() + 1,subRect.y())
-        if newStartPot.x >= rect.width():
-            newStartPot.x = 0
-            newStartPot.y += 1
-        start = findNextNoneTransparentPixel(newStartPot,rect)
-
+        new_start_pot = Vec2(sub_rect.get_max_x() + 1, sub_rect.y())
+        if new_start_pot.x >= rect.width():
+            new_start_pot.x = 0
+            new_start_pot.y += 1
+        start = find_next_none_transparent_pixel(new_start_pot, rect)
     return ""
 
-def saveUnpackerImage(out_path):
+
+def save_unpacker_image(out_path):
+    global image_info
     index = 0
-    outImageName = "save_%d.png"
+    out_image_name = "save_%d.png"
     for v in gl_rect_list:
         box = (
             int(v.x()),
@@ -382,12 +398,12 @@ def saveUnpackerImage(out_path):
             int(v.x() + v.width()),
             int(v.y() + v.height())
         )
-        imageName = outImageName %index
-        rect_on_big = imageInfo.crop(box)
-        outfile = os.path.join(out_path,imageName)
-        outpath = os.path.dirname(outfile)
-        if not os.path.exists(outpath):
-            os.makedirs(outpath)
+        image_name = out_image_name % index
+        rect_on_big = image_info.crop(box)
+        outfile = os.path.join(out_path, image_name)
+        out_path_sub = os.path.dirname(outfile)
+        if not os.path.exists(out_path_sub):
+            os.makedirs(out_path_sub)
         rect_on_big.save(outfile)
         index += 1
 
@@ -404,8 +420,7 @@ if __name__ == '__main__':
     if len(sys.argv) != 3:
         print "USAGE:python pngUnPacker.py [XXX.png] [outPath]"
     else:
-        global imageInfo
         path = sys.argv[1]
-        outpath = sys.argv[2]
-        unpackerImage(path)
-        saveUnpackerImage(outpath)
+        out_path = sys.argv[2]
+        unpacker_image(path)
+        save_unpacker_image(out_path) 
