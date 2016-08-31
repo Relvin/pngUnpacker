@@ -71,6 +71,9 @@ class Size(object):
         elif isinstance(wOrther,Vec2):
             self.width = float(wOrther.x)
             self.height = float(wOrther.y)
+        elif isinstance(wOrther,tuple):
+            self.width = wOrther[0]
+            self.height = wOrther[1]
         else:
             self.width = float(wOrther)
             self.height = float(h)
@@ -107,11 +110,16 @@ class Rect(object):
         elif isinstance(xOrVec2,Vec2) and (isinstance(yOrSize,Size) or isinstance(yOrSize,Vec2)):
             self.origin = Vec2(xOrVec2)
             self.size = Size(yOrSize)
-        elif xOrVec2 != None and yOrSize != None and width != None and height != None:
+        elif xOrVec2 is not None and yOrSize is not None and width is not None and height is not None:
             self.origin.x = float(xOrVec2)
             self.origin.y = float(yOrSize)
             self.size.width = float(width)
             self.size.height = float(height)
+        else:
+            self.origin.x = 0
+            self.origin.y = 0
+            self.size.width = 0
+            self.size.height = 0
 
     def __eq__(self, other):
         if self.x() == other.x() and self.y() == other.y() and self.width() == other.width() and self.height() == other.height():
@@ -341,7 +349,7 @@ def unpackerImage(path):
     global imageInfo
     imageInfo = Image.open(path)
     # imageInfo.show()
-    size = Size(imageInfo.width,imageInfo.height)
+    size = Size(imageInfo.size)
     rect = Rect(Vec2(0,0),size)
     start = findNextNoneTransparentPixel(Vec2(0,0),rect)
     while isinstance(start,Vec2) and start < rect.size:
