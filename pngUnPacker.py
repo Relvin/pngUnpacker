@@ -362,6 +362,10 @@ def march_square(start, rect):
 
 def unpacker_image(path):
     global image_info
+    global gl_rect_list
+    global gl_plist_rect_list
+    gl_plist_rect_list = []
+    gl_rect_list = []
     image_info = Image.open(path)
     # image_info.show()
     size = Size(image_info.size)
@@ -387,10 +391,15 @@ def unpacker_image(path):
     return ""
 
 
-def save_unpacker_image(out_path):
+def save_unpacker_image(imageName, out_path):
     global image_info
     index = 0
-    out_image_name = "save_%d.png"
+    baseName = os.path.basename(imageName)
+    baseName = baseName[0:baseName.index('.')]
+    outdir = os.path.join(out_path,baseName)
+    if not os.path.exists(outdir):
+        os.makedirs(outdir)
+    out_image_name = baseName + "_%d.png"
     for v in gl_rect_list:
         box = (
             int(v.x()),
@@ -400,13 +409,23 @@ def save_unpacker_image(out_path):
         )
         image_name = out_image_name % index
         rect_on_big = image_info.crop(box)
-        outfile = os.path.join(out_path, image_name)
+        outfile = os.path.join(outdir, image_name)
         out_path_sub = os.path.dirname(outfile)
         if not os.path.exists(out_path_sub):
             os.makedirs(out_path_sub)
         rect_on_big.save(outfile)
         index += 1
 
+
+def unpacker_png(input_path, out_path):
+     for(dirpath, dirnames, filenames) in os.walk(input_path):
+            for filename in filenames:
+                if filename.endswith(".png"):
+                    outdir = os.path.join(out_path,dirpath[len(input_path) + 1:])
+                    if not os.path.exists(outdir):
+                        os.makedirs(outdir)
+                    unpacker_image(filename)
+                    save_unpacker_image(os.path.basename(filename), outdir)
 # def plistFrameCompare(plistFile):
 #     root = ElementTree.fromstring(open(plistFile,'r').read())
 #     plist_dict = tree_to_dict(root[0])
@@ -417,10 +436,15 @@ def save_unpacker_image(out_path):
 #         gl_plist_rect_list.append(rectlist)
 # outMainScene
 if __name__ == '__main__':
-    if len(sys.argv) != 3:
+    if len(sys.argv) < 2:
         print "USAGE:python pngUnPacker.py [XXX.png] [outPath]"
     else:
         path = sys.argv[1]
-        out_path = sys.argv[2]
-        unpacker_image(path)
-        save_unpacker_image(out_path) 
+        out_path = "./"
+        if len(sys.argv) > 2:
+            out_path = sys.argv[2]
+        if os.path.isfile(path):
+            unpacker_image(path)
+            save_unpacker_image(os.path.basename(path), out_path)
+        else:
+           unpacker_png(path, out_path)
