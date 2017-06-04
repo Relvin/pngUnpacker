@@ -5,9 +5,10 @@
 import os
 import sys
 from PIL import Image
+import copy
 # from xml.etree import ElementTree
 
-image_info = {}
+image_info = None
 gl_rect_list = []
 gl_plist_rect_list = []
 
@@ -393,6 +394,8 @@ def unpacker_image(path):
 
 def save_unpacker_image(imageName, out_path):
     global image_info
+    if not image_info:
+        image_info = Image.open(path)
     index = 0
     baseName = os.path.basename(imageName)
     baseName = baseName[0:baseName.index('.')]
@@ -417,6 +420,53 @@ def save_unpacker_image(imageName, out_path):
         index += 1
 
 
+def fix_rect(x, y, width, height):
+    return Rect(x, y, width, height)
+
+
+def unpacker_fix_image(imageName, out_path, width, height, x_idx, y_idx):
+    global image_info
+    if not image_info:
+        image_info = Image.open(path)
+    index = 0
+    baseName = os.path.basename(imageName)
+    baseName = baseName[0:baseName.index('.')]
+    outdir = os.path.join(out_path,baseName)
+    if not os.path.exists(outdir):
+        os.makedirs(outdir)
+    out_image_name = "mingmah_%d%d.png"
+
+    for y in range(y_idx):
+        for x in range(x_idx):
+            rect = fix_rect(x * width,y * height, width, height)
+
+            box = (
+                int(rect.x()),
+                int(rect.y()),
+                int(rect.x() + rect.width()),
+                int(rect.y() + rect.height())
+            )
+            x_index = x + 1
+            y_index = y
+            if y_index == 0:
+                y_index = 2
+            elif y_index == 1:
+                y_index = 3
+            elif y_index == 2:
+                y_index = 1
+            else:
+                y_index = y_index + 1
+            image_name = out_image_name % (y_index, x_index)
+            rect_on_big = image_info.crop(box)
+            outfile = os.path.join(outdir, image_name)
+            out_path_sub = os.path.dirname(outfile)
+            if not os.path.exists(out_path_sub):
+                os.makedirs(out_path_sub)
+            rect_on_big.save(outfile)
+            index += 1
+    pass
+
+
 def unpacker_png(input_path, out_path):
      for(dirpath, dirnames, filenames) in os.walk(input_path):
             for filename in filenames:
@@ -424,7 +474,8 @@ def unpacker_png(input_path, out_path):
                     outdir = os.path.join(out_path,dirpath[len(input_path) + 1:])
                     if not os.path.exists(outdir):
                         os.makedirs(outdir)
-                    unpacker_image(filename)
+                    fullpath = os.path.join(dirpath,filename)
+                    unpacker_image(fullpath)
                     save_unpacker_image(os.path.basename(filename), outdir)
 # def plistFrameCompare(plistFile):
 #     root = ElementTree.fromstring(open(plistFile,'r').read())
@@ -439,11 +490,13 @@ if __name__ == '__main__':
     if len(sys.argv) < 2:
         print "USAGE:python pngUnPacker.py [XXX.png] [outPath]"
     else:
+
         path = sys.argv[1]
         out_path = "./"
         if len(sys.argv) > 2:
             out_path = sys.argv[2]
         if os.path.isfile(path):
+            # unpacker_fix_image(os.path.basename(path), out_path, 45, 28, 9, 4)
             unpacker_image(path)
             save_unpacker_image(os.path.basename(path), out_path)
         else:

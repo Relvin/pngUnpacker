@@ -76,16 +76,16 @@ def gen_plist_format_1(plist_dict,png_filename):
         if v['rotated']:
             rect_on_big = rect_on_big.transpose(Image.ROTATE_90)
         result_image = Image.new('RGBA',sizelist,(0,0,0,0))
-        offset = [int(x)for x in to_list(v['offset'])]
+        offset = [int(float(x))for x in to_list(v['offset'])]
         if v['rotated']:
             result_box=(
                 (sizelist[0] - height) / 2 + offset[0],
-                (sizelist[1] - width) / 2 + offset[1],
+                (sizelist[1] - width) / 2 - offset[1],
             )
         else:
             result_box=(
                 (sizelist[0] - width)/2 + offset[0],
-                (sizelist[1] - height)/2 + offset[1]
+                (sizelist[1] - height)/2 - offset[1]
             )
         result_image.paste(rect_on_big,result_box)
         outfile = (file_path+'/'+k)
