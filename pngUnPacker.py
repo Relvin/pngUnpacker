@@ -5,6 +5,7 @@
 import os
 import sys
 from PIL import Image
+import types
 import copy
 # from xml.etree import ElementTree
 
@@ -196,9 +197,12 @@ def get_alpha_by_pos(pos):
     point = (pos.x, pos.y)
     color = image_info.getpixel(point)
     alpha = 0
-    if color[3] > 0:
-        for value in color:
-            alpha += value
+    if type(color) is types.TupleType:
+        if color[3] > 0:
+            for value in color:
+                alpha += value
+    elif type(color) is types.IntType:
+        alpha = color
 
     return alpha
 
@@ -487,11 +491,11 @@ def unpacker_png(input_path, out_path):
 #         gl_plist_rect_list.append(rectlist)
 # outMainScene
 if __name__ == '__main__':
-    if len(sys.argv) < 2:
-        print "USAGE:python pngUnPacker.py [XXX.png] [outPath]"
-    else:
+    # if len(sys.argv) < 2:
+    #     print "USAGE:python pngUnPacker.py [XXX.png] [outPath]"
+    # else:
 
-        path = sys.argv[1]
+        path = "/Users/relvin/Desktop/sp_avatar_frame.png"#sys.argv[1]
         out_path = "./"
         if len(sys.argv) > 2:
             out_path = sys.argv[2]

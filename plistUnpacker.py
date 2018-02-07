@@ -2,6 +2,9 @@
 import os,sys
 from xml.etree import ElementTree
 from PIL import Image
+
+index = 0
+
 def endWith(s,*endstring):
     array = map(s.endswith,endstring)
     if True in array:
@@ -173,7 +176,26 @@ def gen_plist_format_3(plist_dict,png_filename):
         result_image.save(outfile)
     print "gen_plist_format_3"
 
+
+def fix_pic_unpack(png_filename):
+    baseName = os.path.basename(png_filename)
+    baseName = baseName[0:baseName.index('.')]
+    file_path = "./out/im" + baseName
+    big_image = Image.open(png_filename)
+    global index
+    width = big_image.size[0]
+    height = big_image.size[1]
+    cnt = width / 100
+    print ("%d:%d" % (index, cnt - 1))
+    index = index + 1
+    pass
+
 if __name__ == '__main__':
+    # pathOrFilename = sys.argv[1]
+    # for filepath, filedirs, filenames in os.walk(pathOrFilename):
+    #     for filename in filenames:
+    #         if filename.endswith('.png'):
+    #             fix_pic_unpack(os.path.join(filepath,filename))
     if len(sys.argv) != 2:
         print "USAGE: python plistUnpacker.py [Directory/xxx.plist]"
     else:
